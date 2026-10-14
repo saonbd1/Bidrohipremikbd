@@ -1,11 +1,18 @@
 name: Schedule Random Facebook Post
 
 on:
-  # Run daily at 9 AM UTC
   schedule:
-    - cron: '0 9 * * *'
-  # Or run manually from Actions tab
+    # 09:50 GMT+6 (03:50 UTC) → schedules post for 10:00 GMT+6
+    - cron: '50 3 * * *'
+    # 19:50 GMT+6 (13:50 UTC) → schedules post for 20:00 GMT+6
+    - cron: '50 13 * * *'
+  # Or run manually from the Actions tab
   workflow_dispatch:
+    inputs:
+      slot:
+        description: 'Posting slot (10:00, 20:00, or auto)'
+        required: false
+        default: 'auto'
 
 jobs:
   schedule-post:
@@ -13,18 +20,15 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-      
-      - name: Install dependencies
-        run: npm install
-      
+
       - name: Schedule Facebook Post
         env:
-          PAGE_ID: ${{ secrets.FACEBOOK_PAGE_ID }}
-          PAGE_ACCESS_TOKEN: ${{ secrets.FACEBOOK_ACCESS_TOKEN }}
-        run: |
-          node schedule-facebook-post.js
+          POST_SLOT: ${{ github.event.inputs.slot || 'auto' }}
+          FACEBOOK_PAGE_ID: ${{ secrets.FACEBOOK_PAGE_ID }}
+          FACEBOOK_ACCESS_TOKEN: ${{ secrets.FACEBOOK_ACCESS_TOKEN }}
+        run: node schedule-facebook-post.js
