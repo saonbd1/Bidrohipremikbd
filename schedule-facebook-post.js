@@ -12,6 +12,14 @@ const GRAPH = 'https://graph.facebook.com/v18.0';
 const imagesDir = path.join(process.cwd(), 'all_images');
 const ALLOWED = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif']);
 
+// Original captions extracted from the Facebook export (may be missing)
+let manifest = {};
+try {
+  manifest = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'post_manifest.json'), 'utf8'));
+} catch (e) {
+  console.warn('⚠️  post_manifest.json not found — posting without original captions.');
+}
+
 // ============================================================
 // 1. Pick a random image from all_images/
 // ============================================================
@@ -31,13 +39,14 @@ if (files.length === 0) {
 
 const randomFile = files[Math.floor(Math.random() * files.length)];
 const filePath = path.join(imagesDir, randomFile);
-const caption = `Random post - ${randomFile}`;
+
+// Original caption — null means the original post had no text
+const caption = manifest[randomFile] || null;
 
 // ============================================================
 // 2. Determine the posting slot: 10:00 or 20:00 GMT+6
 //    10:00 GMT+6 = 04:00 UTC  |  20:00 GMT+6 = 14:00 UTC
 //    POST_SLOT env: '10:00' | '20:00' | 'auto'
-//    auto = morning slot if run before 12:00 UTC, else evening
 // ============================================================
 let slot = process.env.POST_SLOT || 'auto';
 if (slot === 'auto') {
@@ -69,7 +78,10 @@ const utc = new Date(scheduledPublishTime * 1000)
 console.log('📸 Image selected :', randomFile, `(${files.length} total images)`);
 console.log('⏰ Post slot      :', slot, 'GMT+6');
 console.log('📅 Scheduled for  :', `${gmt6} GMT+6  (${utc} UTC)`);
-console.log('📝 Caption        :', caption);
+console.log(
+  '📝 Caption        :',
+  caption ? caption : '(no text — original post had no caption)'
+);
 
 // ============================================================
 // 3. Schedule on Facebook (only when token is set)
@@ -89,7 +101,10 @@ async function scheduleOnFacebook() {
     new Blob([fs.readFileSync(filePath)], { type: mimeOf(randomFile) }),
     randomFile
   );
-  form.append('message', caption);
+  // Only attach text when the original post had one
+  if (caption) {
+    form.append('message', caption);
+  }
   form.append('published', 'false'); // schedule, don't publish now
   form.append('scheduled_publish_time', String(scheduledPublishTime));
   form.append('access_token', ACCESS_TOKEN);
