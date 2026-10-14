@@ -1,0 +1,12 @@
+{
+  "name": "bidrohipremikbd-facebook-scheduler",
+  "version": "1.0.0",
+  "description": "GitHub Actions workflow to schedule random Facebook posts from local content folder",
+  "main": "schedule-facebook-post.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["facebook", "scheduling", "github-actions", "vercel"],
+  "author": "Saon Islam",
+  "license": "MIT"
+}
